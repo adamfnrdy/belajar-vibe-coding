@@ -117,4 +117,101 @@ describe("User API Tests", () => {
       expect(body).toEqual({ message: "Email atau password salah" });
     });
   });
+
+  describe("Get Current User API", () => {
+    let token: string;
+
+    beforeAll(async () => {
+      await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko Current",
+            email: "ekocurrent@localhost",
+            password: "rahasiacurrent",
+          }),
+        })
+      );
+
+      const loginResponse = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "ekocurrent@localhost",
+            password: "rahasiacurrent",
+          }),
+        })
+      );
+      const loginResult = await loginResponse.json();
+      token = loginResult.data;
+    });
+
+    it("should successfully get current logged in user details", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+      );
+
+      expect(response.status).toBe(200);
+      const body = await response.json();
+      expect(body.data).toBeDefined();
+      expect(body.data.name).toBe("Eko Current");
+      expect(body.data.email).toBe("ekocurrent@localhost");
+      expect(body.data.created_at).toBeDefined();
+      expect(body.data.password).toBeUndefined();
+    });
+
+    it("should fail with 401 if Authorization header is missing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body = await response.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+
+    it("should fail with 401 if token format is incorrect", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            "Authorization": `invalidtokenformat`,
+          },
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body = await response.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+
+    it("should fail with 401 if token is invalid", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${crypto.randomUUID()}`,
+          },
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body = await response.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+  });
 });
+
