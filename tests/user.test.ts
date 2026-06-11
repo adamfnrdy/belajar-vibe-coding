@@ -55,6 +55,83 @@ describe("User API Tests", () => {
       const body: any = await response.json();
       expect(body).toEqual({ error: "Email sudah terdaftar" });
     });
+
+    it("should fail to register user if name is too long (256 characters)", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "a".repeat(256),
+            email: "valid@localhost",
+            password: "password",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to register user if email is too long (256 characters)", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            email: "a".repeat(256),
+            password: "password",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to register user if password is too long (256 characters)", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            email: "valid@localhost",
+            password: "a".repeat(256),
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should successfully register user if fields are exactly 255 characters", async () => {
+      const uniqueSuffix = Date.now().toString();
+      const emailLocalPart = "a".repeat(255 - 11 - uniqueSuffix.length);
+      const email = `${emailLocalPart}_${uniqueSuffix}@localhost`;
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "b".repeat(255),
+            email: email,
+            password: "c".repeat(255),
+          }),
+        })
+      );
+
+      expect(response.status).toBe(200);
+      const body: any = await response.json();
+      expect(body).toEqual({ data: "OK" });
+    });
   });
 
   describe("User Login API", () => {
