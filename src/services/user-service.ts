@@ -82,11 +82,11 @@ export async function getCurrentUser(token: string) {
     .where(eq(sessions.token, token))
     .limit(1);
 
-  if (result.length === 0) {
+  const [user] = result;
+  if (!user) {
     throw new Error("Unauthorized");
   }
 
-  const user = result[0];
   return {
     id: user.id,
     name: user.name,
