@@ -213,5 +213,107 @@ describe("User API Tests", () => {
       expect(body).toEqual({ error: "Unauthorized" });
     });
   });
-});
 
+  describe("Logout User API", () => {
+    let token: string;
+
+    beforeAll(async () => {
+      await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko Logout",
+            email: "ekologout@localhost",
+            password: "rahasialogout",
+          }),
+        })
+      );
+
+      const loginResponse = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "ekologout@localhost",
+            password: "rahasialogout",
+          }),
+        })
+      );
+      const loginResult: any = await loginResponse.json();
+      token = loginResult.data;
+    });
+
+    it("should successfully logout user and delete session", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+      );
+
+      expect(response.status).toBe(200);
+      const body: any = await response.json();
+      expect(body).toEqual({ data: "OK" });
+
+      // Verify the session is actually deleted by trying to get current user
+      const getUserResponse = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+      );
+      expect(getUserResponse.status).toBe(401);
+    });
+
+    it("should fail with 401 if Authorization header is missing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "DELETE",
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body: any = await response.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+
+    it("should fail with 401 if token is invalid", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${crypto.randomUUID()}`,
+          },
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body: any = await response.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+
+    it("should fail with 401 if trying to logout with already used token", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body: any = await response.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
+  });
+});
