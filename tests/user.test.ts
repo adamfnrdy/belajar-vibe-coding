@@ -32,7 +32,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body).toEqual({ data: "OK" });
     });
 
@@ -52,7 +52,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(400);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body).toEqual({ error: "Email sudah terdaftar" });
     });
   });
@@ -73,7 +73,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body.data).toBeDefined();
       expect(typeof body.data).toBe("string");
       expect(body.data.length).toBeGreaterThan(0);
@@ -94,7 +94,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(400);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body).toEqual({ message: "Email atau password salah" });
     });
 
@@ -113,7 +113,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(400);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body).toEqual({ message: "Email atau password salah" });
     });
   });
@@ -148,7 +148,7 @@ describe("User API Tests", () => {
           }),
         })
       );
-      const loginResult = await loginResponse.json();
+      const loginResult: any = await loginResponse.json();
       token = loginResult.data;
     });
 
@@ -163,7 +163,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(200);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body.data).toBeDefined();
       expect(body.data.name).toBe("Eko Current");
       expect(body.data.email).toBe("ekocurrent@localhost");
@@ -179,7 +179,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(401);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body).toEqual({ error: "Unauthorized" });
     });
 
@@ -194,7 +194,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(401);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body).toEqual({ error: "Unauthorized" });
     });
 
@@ -209,7 +209,7 @@ describe("User API Tests", () => {
       );
 
       expect(response.status).toBe(401);
-      const body = await response.json();
+      const body: any = await response.json();
       expect(body).toEqual({ error: "Unauthorized" });
     });
   });
