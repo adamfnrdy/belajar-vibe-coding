@@ -45,11 +45,10 @@ export async function loginUser(data: LoginUserInput) {
     .where(eq(users.email, data.email))
     .limit(1);
 
-  if (existingUser.length === 0) {
+  const [user] = existingUser;
+  if (!user) {
     throw new Error("Email atau password salah");
   }
-
-  const user = existingUser[0];
 
   // Verify password using Bun's built-in bcrypt verify
   const isPasswordValid = await Bun.password.verify(data.password, user.password);
