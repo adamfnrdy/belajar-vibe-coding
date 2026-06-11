@@ -45,11 +45,10 @@ export async function loginUser(data: LoginUserInput) {
     .where(eq(users.email, data.email))
     .limit(1);
 
-  if (existingUser.length === 0) {
+  const [user] = existingUser;
+  if (!user) {
     throw new Error("Email atau password salah");
   }
-
-  const user = existingUser[0];
 
   // Verify password using Bun's built-in bcrypt verify
   const isPasswordValid = await Bun.password.verify(data.password, user.password);
@@ -68,3 +67,30 @@ export async function loginUser(data: LoginUserInput) {
 
   return token;
 }
+
+export async function getCurrentUser(token: string) {
+  const result = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      createdAt: users.createdAt,
+    })
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(eq(sessions.token, token))
+    .limit(1);
+
+  const [user] = result;
+  if (!user) {
+    throw new Error("Unauthorized");
+  }
+
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    created_at: user.createdAt,
+  };
+}
+
