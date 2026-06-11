@@ -95,17 +95,12 @@ export async function getCurrentUser(token: string) {
 }
 
 export async function logoutUser(token: string) {
-  const existingSession = await db
-    .select()
-    .from(sessions)
-    .where(eq(sessions.token, token))
-    .limit(1);
+  const [result] = await db
+    .delete(sessions)
+    .where(eq(sessions.token, token));
 
-  const [session] = existingSession;
-  if (!session) {
+  if (result.affectedRows === 0) {
     throw new Error("Unauthorized");
   }
-
-  await db.delete(sessions).where(eq(sessions.token, token));
 }
 

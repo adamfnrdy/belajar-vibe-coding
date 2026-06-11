@@ -300,7 +300,20 @@ describe("User API Tests", () => {
       const body: any = await response.json();
       expect(body).toEqual({ error: "Unauthorized" });
     });
+
+    it("should fail with 401 if trying to logout with already used token", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+      );
+
+      expect(response.status).toBe(401);
+      const body: any = await response.json();
+      expect(body).toEqual({ error: "Unauthorized" });
+    });
   });
 });
-
-
