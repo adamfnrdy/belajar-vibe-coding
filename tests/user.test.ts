@@ -1,16 +1,10 @@
-import { describe, expect, it, beforeAll, afterAll } from "bun:test";
+import { describe, expect, it, beforeEach } from "bun:test";
 import { app } from "../src/index";
 import { db, users, sessions } from "../src/db";
 
 describe("User API Tests", () => {
-  beforeAll(async () => {
-    // Clean up the tables before tests (sessions first due to FK)
-    await db.delete(sessions);
-    await db.delete(users);
-  });
-
-  afterAll(async () => {
-    // Clean up after tests run
+  beforeEach(async () => {
+    // Clean up the tables before each test to ensure isolation (sessions first due to FK)
     await db.delete(sessions);
     await db.delete(users);
   });
@@ -37,6 +31,22 @@ describe("User API Tests", () => {
     });
 
     it("should fail to register user with duplicate email", async () => {
+      // Setup: register first user
+      await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            email: "eko@localhost",
+            password: "rahasia",
+          }),
+        })
+      );
+
+      // Act: register duplicate email
       const response = await app.handle(
         new Request("http://localhost/api/users", {
           method: "POST",
@@ -132,9 +142,131 @@ describe("User API Tests", () => {
       const body: any = await response.json();
       expect(body).toEqual({ data: "OK" });
     });
+
+    it("should fail to register user if name is missing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "valid@localhost",
+            password: "password",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to register user if email is missing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            password: "password",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to register user if password is missing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            email: "valid@localhost",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to register user if name is empty string", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "",
+            email: "valid@localhost",
+            password: "password",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to register user if email is empty string", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            email: "",
+            password: "password",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to register user if password is empty string", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            email: "valid@localhost",
+            password: "",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
   });
 
   describe("User Login API", () => {
+    beforeEach(async () => {
+      // Setup: register a user to login with
+      await app.handle(
+        new Request("http://localhost/api/users", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            name: "Eko",
+            email: "eko@localhost",
+            password: "rahasia",
+          }),
+        })
+      );
+    });
+
     it("should successfully login registered user and return token", async () => {
       const response = await app.handle(
         new Request("http://localhost/api/users/login", {
@@ -193,12 +325,78 @@ describe("User API Tests", () => {
       const body: any = await response.json();
       expect(body).toEqual({ message: "Email atau password salah" });
     });
+
+    it("should fail to login if email is missing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            password: "rahasia",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to login if password is missing", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "eko@localhost",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to login if email is empty string", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "",
+            password: "rahasia",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
+
+    it("should fail to login if password is empty string", async () => {
+      const response = await app.handle(
+        new Request("http://localhost/api/users/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: "eko@localhost",
+            password: "",
+          }),
+        })
+      );
+
+      expect(response.status).toBe(422);
+    });
   });
 
   describe("Get Current User API", () => {
     let token: string;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await app.handle(
         new Request("http://localhost/api/users", {
           method: "POST",
@@ -294,7 +492,7 @@ describe("User API Tests", () => {
   describe("Logout User API", () => {
     let token: string;
 
-    beforeAll(async () => {
+    beforeEach(async () => {
       await app.handle(
         new Request("http://localhost/api/users", {
           method: "POST",
@@ -379,6 +577,17 @@ describe("User API Tests", () => {
     });
 
     it("should fail with 401 if trying to logout with already used token", async () => {
+      // First logout
+      await app.handle(
+        new Request("http://localhost/api/users/current", {
+          method: "DELETE",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+          },
+        })
+      );
+
+      // Try logging out again with the same token
       const response = await app.handle(
         new Request("http://localhost/api/users/current", {
           method: "DELETE",
