@@ -12,6 +12,15 @@ export interface LoginUserInput {
   password: string;
 }
 
+/**
+ * Mendaftarkan pengguna baru ke dalam database.
+ * Melakukan pengecekan duplikasi email dan melakukan proses hashing 
+ * pada password sebelum menyimpannya ke tabel users.
+ * 
+ * @param data - Objek yang berisi name, email, dan password untuk registrasi
+ * @throws Error jika email sudah terdaftar
+ * @returns Object berisi status sukses
+ */
 export async function registerUser(data: RegisterUserInput) {
   // Check if email already exists
   const existingUser = await db
@@ -37,6 +46,15 @@ export async function registerUser(data: RegisterUserInput) {
   return { success: true };
 }
 
+/**
+ * Melakukan proses otentikasi (login) untuk pengguna.
+ * Mencari pengguna berdasarkan email, memverifikasi kecocokan password dengan hash,
+ * lalu membuat sesi baru (token UUID) yang disimpan ke tabel sessions.
+ * 
+ * @param data - Objek yang berisi email dan password dari form login
+ * @throws Error jika email tidak ditemukan atau password salah
+ * @returns String token sesi (UUID) yang berhasil di-generate
+ */
 export async function loginUser(data: LoginUserInput) {
   // Find user by email
   const existingUser = await db
@@ -68,6 +86,15 @@ export async function loginUser(data: LoginUserInput) {
   return token;
 }
 
+/**
+ * Mengambil informasi detail profil pengguna yang sedang login (current user).
+ * Melakukan query ke tabel sessions digabungkan (inner join) dengan tabel users 
+ * untuk mendapatkan data pengguna berdasarkan token sesi yang valid.
+ * 
+ * @param token - String token sesi milik pengguna
+ * @throws Error "Unauthorized" jika token tidak ditemukan atau tidak valid
+ * @returns Objek profil pengguna (id, name, email, created_at)
+ */
 export async function getCurrentUser(token: string) {
   const result = await db
     .select({
@@ -94,6 +121,13 @@ export async function getCurrentUser(token: string) {
   };
 }
 
+/**
+ * Melakukan proses logout pengguna dengan cara menghapus sesi yang aktif.
+ * Mencari dan menghapus record dari tabel sessions berdasarkan token yang diberikan.
+ * 
+ * @param token - String token sesi yang ingin diakhiri (logout)
+ * @throws Error "Unauthorized" jika token tidak ditemukan di database
+ */
 export async function logoutUser(token: string) {
   const [result] = await db
     .delete(sessions)
